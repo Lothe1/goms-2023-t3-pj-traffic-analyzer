@@ -7,3 +7,14 @@ edition = "2021"
 
 [dependencies]
 netflow_parser = "0.3.6"
+rdkafka = "0.36.2"
+tokio = { version = "1.38.0", features = ["full"] }
+uuid = { version = "1.9.1", features = ["v4"] }
+
+[[bin]]
+name = "ta-listener"
+path = "src/app/listener.rs"
+
+[[bin]]
+name = "ta-enricher"
+path = "src/app/enricher.rs"

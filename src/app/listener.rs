@@ -1,11 +1,24 @@
 use netflow_parser::{NetflowParser, NetflowPacketResult};
 use std::net::UdpSocket;
+use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::ClientConfig;
+use rdkafka::util::Timeout;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 const BUF_SIZE: usize = 2048;
 
-fn main() -> std::io::Result<()> {
+fn create_producer(bootstrap_server: &str) -> FutureProducer {
+    ClientConfig::new()
+        .set("bootstrap.servers", bootstrap_server)
+        .set("queue.buffering.max.ms", "0")
+        .create().expect("Failed to create client")
+}
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     {
         let socket = UdpSocket::bind("127.0.0.1:9005")?;
+        let producer = create_producer("localhost:9092");
 
         loop {
         // Receives a single datagram message on the socket. If `buf` is too small to hold
@@ -16,9 +29,13 @@ fn main() -> std::io::Result<()> {
             let mut buf: Vec<u8> = buf.to_vec().iter().filter(|&x| *x != 0).map(|x| x.clone()).collect();
             println!("{:?}", String::from_utf8(buf.clone()));
             // Redeclare `buf` as slice of the received data and send reverse data back to origin.
-            let buf = &mut buf[..amt];
-            buf.reverse();
+            let buf: &[u8] = &buf;
+            // buf.reverse();
             socket.send_to(buf, &src)?;
+            producer.send(FutureRecord::<(), _>::to("incoming")
+                  .payload(buf), Timeout::Never)
+                    .await
+                    .expect("Failed to produce");
         }
     } // the socket is closed here
     Ok(())
