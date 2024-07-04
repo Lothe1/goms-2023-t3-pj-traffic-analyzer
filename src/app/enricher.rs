@@ -1,3 +1,4 @@
+use serde_json::json;
 use netflow_parser::{NetflowParser, NetflowPacketResult};
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use uuid::Uuid;
@@ -21,13 +22,19 @@ async fn main() -> std::io::Result<()> {
     let consumer = create_consumer("localhost:9092");
 
     // subscribe to our topic
-    consumer.subscribe(&["incoming"]).unwrap();
-
+    consumer.subscribe(&["listener-to-enricher"]).unwrap();
+    println!("Subscribed! :)");
     loop {
         let message = consumer.recv();
         let message  = message.await.expect("Failed to read message").detach();
         let payload = message.payload().unwrap();
         println!("{}", String::from_utf8(payload.to_vec()).unwrap());
+
+        let packet = NetflowParser::default()
+        .parse_bytes(&payload)
+        .first()
+        .unwrap();
+        println!("{}", json!(NetflowParser::default().parse_bytes(&payload)).to_string());
         }
     Ok(())
 }

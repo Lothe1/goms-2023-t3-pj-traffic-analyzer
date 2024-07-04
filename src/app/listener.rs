@@ -1,3 +1,5 @@
+use clap::Parser;
+use ta::cmd::listener::*;
 use netflow_parser::{NetflowParser, NetflowPacketResult};
 use std::net::UdpSocket;
 use rdkafka::producer::{FutureProducer, FutureRecord};
@@ -16,8 +18,11 @@ fn create_producer(bootstrap_server: &str) -> FutureProducer {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let args = Args::parse();
+    let port = args.port;
+
     {
-        let socket = UdpSocket::bind("127.0.0.1:9005")?;
+        let socket = UdpSocket::bind(format!("127.0.0.1:{port}"))?;
         let producer = create_producer("localhost:9092");
 
         loop {
@@ -32,7 +37,7 @@ async fn main() -> std::io::Result<()> {
             let buf: &[u8] = &buf;
             // buf.reverse();
             socket.send_to(buf, &src)?;
-            producer.send(FutureRecord::<(), _>::to("incoming")
+            producer.send(FutureRecord::<(), _>::to("listener-to-enricher")
                   .payload(buf), Timeout::Never)
                     .await
                     .expect("Failed to produce");
