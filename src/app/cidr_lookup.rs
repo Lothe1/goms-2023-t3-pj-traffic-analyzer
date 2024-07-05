@@ -31,15 +31,17 @@ impl CidrLookup {
         Ok(io::BufReader::new(file).lines())
     }
 
-    // Load a CIDR map from a file
+    // Load a CIDR map from a TSV file
     fn load_cidr_map(file: &str) -> HashMap<String, String> {
         let mut map = HashMap::new();
         if let Ok(lines) = Self::read_lines(file) {
             for line in lines {
                 if let Ok(line) = line {
-                    let parts: Vec<&str> = line.split(',').collect();
-                    if parts.len() == 2 {
-                        map.insert(parts[0].to_string(), parts[1].to_string());
+                    let parts: Vec<&str> = line.split('\t').collect();  // Use '\t' for tab-separated files
+                    if parts.len() >= 3 {
+                        let ip_range = format!("{}-{}", parts[0], parts[1]);
+                        let value = parts[2].to_string();
+                        map.insert(ip_range, value);
                     }
                 }
             }
@@ -60,9 +62,14 @@ impl CidrLookup {
     // Lookup a value in a CIDR map
     fn lookup<'a>(&'a self, map: &'a HashMap<String, String>, ip: &str) -> Option<&String> {
         let ip_addr: Ipv4Addr = ip.parse().unwrap();
-        for cidr in map.keys() {
-            if cidr::Ipv4Cidr::new(ip_addr, cidr.parse().unwrap()).is_ok() {
-                return map.get(cidr);
+        for (ip_range, value) in map.iter() {
+            let range_parts: Vec<&str> = ip_range.split('-').collect();
+            if range_parts.len() == 2 {
+                let start_ip: Ipv4Addr = range_parts[0].parse().unwrap();
+                let end_ip: Ipv4Addr = range_parts[1].parse().unwrap();
+                if ip_addr >= start_ip && ip_addr <= end_ip {
+                    return Some(value);
+                }
             }
         }
         None
