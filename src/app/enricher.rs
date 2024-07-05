@@ -66,31 +66,6 @@ async fn main() -> std::io::Result<()> {
             }
         }
     }
-
-
-        // if let NetflowPacketResult::V5(packet) = packet {
-        //     // Extract source and destination IP addresses
-        //     let src_ip = packet.src_addr.to_string();
-        //     let dst_ip = packet.dst_addr.to_string();
-
-        //     // Lookup the country and AS for the source and destination IPs
-        //     let src_country = cidr_lookup.lookup_country(&src_ip).unwrap_or(&"Unknown".to_string());
-        //     let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap_or(&"Unknown".to_string());
-        //     let src_as = cidr_lookup.lookup_as(&src_ip).unwrap_or(&"Unknown".to_string());
-        //     let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap_or(&"Unknown".to_string());
-
-        //     let enriched_packet = json!({
-        //         "src_ip": src_ip,
-        //         "dst_ip": dst_ip,
-        //         "src_country": src_country,
-        //         "dst_country": dst_country,
-        //         "src_as": src_as,
-        //         "dst_as": dst_as,
-        //         "packet": packet,
-        //     });
-
-        //     println!("{}", enriched_packet.to_string());
-        // }
     
     Ok(())
 }
