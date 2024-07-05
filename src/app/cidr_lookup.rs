@@ -32,8 +32,6 @@ impl CidrLookup {
     }
 
     // Load a CIDR map from a file
-    // The file should be a CSV file with the CIDR block in the first column
-    // and the value in the second column
     fn load_cidr_map(file: &str) -> HashMap<String, String> {
         let mut map = HashMap::new();
         if let Ok(lines) = Self::read_lines(file) {

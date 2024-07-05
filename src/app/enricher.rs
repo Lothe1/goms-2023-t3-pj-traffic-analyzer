@@ -31,8 +31,11 @@ async fn main() -> std::io::Result<()> {
     consumer.subscribe(&["listener-to-enricher"]).unwrap();
     println!("Subscribed! :)");
 
+    let country_cidr_path = "map/ip2country-v4.tsv";
+    let as_cidr_path = "map/ip2asn-v4.tsv";
+
     // Load the CIDR lookup tables
-    let cidr_lookup = CidrLookup::new("path/to/country_cidr", "path/to/as_cidr.txt");
+    let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);
 
     loop {
         let message = consumer.recv().await.expect("Failed to read message").detach();
