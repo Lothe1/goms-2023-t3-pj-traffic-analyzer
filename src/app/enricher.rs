@@ -3,6 +3,10 @@ use netflow_parser::{NetflowParser, NetflowPacketResult};
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use uuid::Uuid;
 use rdkafka::{ClientConfig, Message};
+
+mod cidr_lookup;
+use cidr_lookup::CidrLookup;
+
 const BUF_SIZE: usize = 2048;
 
 fn create_consumer(bootstrap_server: &str) -> StreamConsumer {

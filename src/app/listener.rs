@@ -7,9 +7,6 @@ use rdkafka::ClientConfig;
 use rdkafka::util::Timeout;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
-mod cidr_lookup;
-use cidr_lookup::CidrLookup;
-
 const BUF_SIZE: usize = 2048;
 
 fn create_producer(bootstrap_server: &str) -> FutureProducer {
