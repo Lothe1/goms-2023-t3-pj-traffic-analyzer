@@ -15,6 +15,7 @@ uuid = { version = "1.9.1", features = ["v4"] }
 cidr = "0.2.3"
 influxdb = { version = "0.7.2", features = ["derive"] }
 
+
 [[bin]]
 name = "ta-listener"
 path = "src/app/listener.rs"
