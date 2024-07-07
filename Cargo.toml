@@ -14,6 +14,8 @@ tokio = { version = "1.38.0", features = ["full"] }
 uuid = { version = "1.9.1", features = ["v4"] }
 cidr = "0.2.3"
 influxdb = { version = "0.7.2", features = ["derive"] }
+chrono = "0.4.38"
+serde = "1.0.204"
 
 
 [[bin]]
@@ -23,3 +25,7 @@ path = "src/app/listener.rs"
 [[bin]]
 name = "ta-enricher"
 path = "src/app/enricher.rs"
+
+[[bin]]
+name = "influxdb_"
+path = "src/app/influxdb.rs"
