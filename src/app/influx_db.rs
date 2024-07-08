@@ -1,3 +1,24 @@
+// IfluxDB keep time series data into buckets. Bucket contains multible measurement<- contain tags and fields
+// Measurement <- logical grouping with multiple tages and fields
+    // Tags <- key value pairs, storing metadata info (not change often) like location, host station
+    // Fields <- key value pairs, storing data (change often) like temperature, humidity
+    // Timestamp <- time
+
+// Schema that I have in mind is one bucket
+//two measurements
+//Incoming IP:
+    //Tags: 
+        // AS, Country
+    //Fields:
+        // IP
+
+//Outgoing IP
+    //Tags:
+        // AS, Country
+    //Fields:
+        // IP
+
+
 use chrono::{DateTime, Utc};
 use influxdb::{ Error, InfluxDbWriteable, ReadQuery, Timestamp};
 use influxdb::{Client, Query};
