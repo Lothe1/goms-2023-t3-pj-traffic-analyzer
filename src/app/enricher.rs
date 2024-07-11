@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use serde_json::json;
 use netflow_parser::{NetflowParser, NetflowPacketResult};
 use rdkafka::consumer::{Consumer, StreamConsumer};
@@ -5,6 +6,7 @@ use uuid::Uuid;
 use rdkafka::{ClientConfig, Message};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::fs::File;
+use reqwest::Client;
 
 mod cidr_lookup;
 use cidr_lookup::CidrLookup;
@@ -22,6 +24,19 @@ fn create_consumer(bootstrap_server: &str) -> StreamConsumer {
         .expect("Failed to create client")
 }
 
+async fn store_in_influxdb(client: &Client, data: &serde_json::Value) -> Result<(), Box<dyn std::error::Error>> {
+    let url = "http://localhost:8086/write?db=netflow";
+    let body = data.to_string();
+    let response = client.post(url)
+        .header("Content-Type", "application/json")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to send request");
+    println!("InfluxDB response: {:?}", response);
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Create the consumer
@@ -31,12 +46,15 @@ async fn main() -> std::io::Result<()> {
     consumer.subscribe(&["listener-to-enricher"]).unwrap();
     println!("Subscribed! :)");
 
+    // Load the CIDR lookup tables
     let country_cidr_path = "map/ip2country-v4.tsv";
     let as_cidr_path = "map/ip2asn-v4.tsv";
-
-    // Load the CIDR lookup tables
     let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);
-
+    
+    // Create the HTTP client
+    let client = Client::new();
+    
+    // Process messages
     loop {
         let message = consumer.recv().await.expect("Failed to read message").detach();
         let payload = message.payload().unwrap();
@@ -56,16 +74,30 @@ async fn main() -> std::io::Result<()> {
                 let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
 
                 let enriched_data = json!({
-                    "src_ip": src_ip,
-                    "dst_ip": dst_ip,
-                    "src_country": src_country,
-                    "dst_country": dst_country,
-                    "src_as": src_as,
-                    "dst_as": dst_as,
-                    "netflow": flow,
+                    "measurement": "netflow",
+                    "tags": {
+                        "src_ip": src_ip,
+                        "dst_ip": dst_ip,
+                        "src_country": src_country,
+                        "dst_country": dst_country,
+                        "src_as": src_as,
+                        "dst_as": dst_as
+                    },
+                    "fields": {
+                        "packets": flow.d_pkts, // Number of packets
+                        "bytes": flow.d_octets, // Number of bytes
+                        "first_switched": flow.first, // Start time of the flow
+                        "last_switched": flow.last, // End time of the flow
+                    },
+                    "time": packet.header.unix_secs // Time of the flow (we'll use the packet's timestamp)
                 });
 
                 println!("{}", enriched_data.to_string());
+
+                // Store the enriched data in InfluxDB
+                if let Err(e) = store_in_influxdb(&client, &enriched_data).await {
+                    eprintln!("Failed to store data in InfluxDB: {}", e);
+                }
             }
         }
     }

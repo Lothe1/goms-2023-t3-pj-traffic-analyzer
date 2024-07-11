@@ -1,5 +1,4 @@
-pub mod influx_db;
-
+#![allow(unused_imports)]
 use clap::Parser;
 use ta::cmd::listener::*;
 use netflow_parser::{NetflowParser, NetflowPacketResult};
@@ -8,6 +7,8 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::ClientConfig;
 use rdkafka::util::Timeout;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
+pub mod influx_db;
 
 const BUF_SIZE: usize = 2048;
 
