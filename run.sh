@@ -17,3 +17,9 @@ docker run --name influxdb -d -p 8086:8086 \
   -e DOCKER_INFLUXDB_INIT_ORG=doglover645 \
   -e DOCKER_INFLUXDB_INIT_BUCKET=traffic-analyzer \
   influxdb:2
+
+# Get token and pass it to at the start of the applicatoin by commandline probably 
+influx auth create \
+  --org doglover645 \
+  --all-access
+
