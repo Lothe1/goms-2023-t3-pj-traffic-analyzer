@@ -1,37 +1,15 @@
-// IfluxDB keep time series data into buckets. Bucket contains multible measurement<- contain tags and fields
-// Measurement <- logical grouping with multiple tages and fields
-    // Tags <- key value pairs, storing metadata info (not change often) like location, host station
-    // Fields <- key value pairs, storing data (change often) like temperature, humidity
-    // Timestamp <- time
-
-// Schema that I have in mind is one bucket
-//two measurements
-//Incoming IP:
-    //Tags: 
-        // AS, Country
-    //Fields:
-        // IP
-
-//Outgoing IP
-    //Tags:
-        // AS, Country
-    //Fields:
-        // IP
-
-
 use chrono::{DateTime, Utc};
-use influxdb::{ Error, InfluxDbWriteable, ReadQuery, Timestamp};
+use influxdb::{ InfluxDbWriteable};
 use influxdb::{Client, Query};
-use serde::Deserialize;
 
-
+#[derive(Clone)]
 #[derive(InfluxDbWriteable)]
 struct Package{
     time: DateTime<Utc>,
     IP: String,
-    #[influxdb(tag)]
     AS: String,
-    Country: String,
+    location: String,
+    bytes_count: i32,
 }
 
 enum IPtype {
@@ -39,11 +17,18 @@ enum IPtype {
     Outgoing,
 }
 
-fn create_client(bucket:&str) -> Client {
-    let client = Client::new("http://localhost:8086", bucket);
+fn create_client(bucket:&str, token: &str) -> Client {
+    let client = Client::new("http://localhost:8086", bucket)
+        .with_token(token);
     client
 }
-
+async fn read_all_table_query(client: Client, table: &str) -> Result<String, influxdb::Error> {
+    let query = <dyn Query>::raw_read_query(
+        format!("SELECT * FROM {}", table).as_str(),
+    );
+    let read_result = client.query(query).await?;
+    return Ok(read_result.to_string());
+}
 async fn write_data(client: Client, pack: Package, iptype: IPtype) -> Result<(), influxdb::Error> {
     let mut write_query;
     match iptype {
@@ -55,60 +40,215 @@ async fn write_data(client: Client, pack: Package, iptype: IPtype) -> Result<(),
         }
     }
     client.query(write_query).await?;
-
-    // Let's see if the data we wrote is there
-    let read_query = ReadQuery::new("SELECT * FROM incoming");
-
-    let read_result = client.query(read_query).await?;
-    println!("{}", read_result);
-
     Ok(())
 }
-
-
-
-#[tokio::main(flavor = "current_thread")]
-// This attribute makes your main function asynchronous
-async fn main()  ->  Result<(), Box<dyn std::error::Error>> { // Use Box<dyn Error> for a general error type
-    let client = Client::new("http://localhost:8086", "test")
-        .with_token("18uSAEcBTO7qpd50qUwntr1NtTru3oZRx7yPfprA57qWhWkE3BlV_fXIB6TTZcLObPRbK0OdrMc27uGVXRWAHg==")
-        ;
-
-    let test_pack = Package {
-        time: Utc::now(),
-        IP: "192.168.1.1/69".to_string(),
-        AS: "AS142".to_string(),
-        Country: "Thailand".to_string(),
+async fn make_package(time: DateTime<Utc>, IP: &str, AS: &str, Country: &str, bytes: i32) -> Package {
+    let pack = Package {
+        time: time,
+        IP: IP.to_string(),
+        AS: AS.to_string(),
+        location: Country.to_string(),
+        bytes_count: bytes,
     };
-
-    let test = write_data(client, test_pack, IPtype::Incoming).await?;
-
-
+    pack
+}
+async fn write_datas(client: Client, packvec: Vec<Package>, iptype: IPtype) -> Result<(), influxdb::Error> {
+    let mut vec_query = Vec::new();
+    for pack in packvec {
+        let mut write_query;
+        match iptype {
+            IPtype::Incoming => {
+                write_query = pack.into_query("incoming");
+            }
+            IPtype::Outgoing => {
+                write_query = pack.into_query("outgoing");
+            }
+        }
+        vec_query.push(write_query);
+    }
+    client.query(vec_query).await?;
     Ok(())
+}
+async fn makeThaipackage()-> Result<Vec<Package>, influxdb::Error>{
+    let mut packvec = Vec::new();
+    packvec.push(
+        make_package(
+        Utc::now(),
+        "Thai_IP1.1",
+        "THAI_AS1",
+        "TH",
+        16
+    )
+        .await
+    );
 
-    // let query = Query::raw_read_query(
-    //     "SELECT temperature FROM /weather_[a-z]*$/ WHERE time > now() - 1m ORDER BY DESC",
-    // );
-    // let mut db_result = client.json_query(query).await?;
-    // let _result = db_result
-    //     .deserialize_next::<WeatherWithoutCityName>()?
-    //     .series
-    //     .into_iter()
-    //     .map(|mut city_series| {
-    //         let city_name =
-    //             city_series.name.split("_").collect::<Vec<&str>>().remove(2);
-    //         Weather {
-    //             weather: city_series.values.remove(0),
-    //             city_name: city_name.to_string(),
-    //         }
-    //     })
-    //     .collect::<Vec<Weather>>();
+    packvec.push(
+        make_package(
+            Utc::now() - chrono::Duration::minutes(2),
+            "Thai_IP1.2",
+            "THAI_AS1",
+            "TH",
+            33
+        )
+            .await
+    );
 
+    packvec.push(
+        make_package(
+            Utc::now() - chrono::Duration::minutes(14),
+            "Thai_IP1.3",
+            "THAI_AS1",
+            "TH",
+            11
+        )
+            .await
+    );
 
+    packvec.push(
+        make_package(
+            Utc::now() - chrono::Duration::days(4),
+            "Thai_IP2.1",
+            "THAI_AS2",
+            "TH",
+            88
+        )
+            .await
+    );
+    packvec.push(
+        make_package(
+            Utc::now() - chrono::Duration::days(1),
+            "Thai_IP2.2",
+            "THAI_AS2",
+            "TH",
+            99
+        )
+            .await
+    );
+
+    packvec.push(
+        make_package(
+            Utc::now() - chrono::Duration::days(2),
+            "Thai_IP3.1",
+            "THAI_AS3",
+            "TH",
+            451
+        )
+            .await
+    );
+
+    return Ok(packvec);
+
+}
+async fn makeAustraliapackage()-> Result<Vec<Package>, influxdb::Error>{
+    let mut packvec = Vec::new();
+    packvec.push(
+        make_package(
+            Utc::now(),
+            "Aus_IP1.1",
+            "Aus_AS1",
+            "AT",
+            123
+        )
+            .await
+    );
+
+    packvec.push(
+        make_package(
+            Utc::now(),
+            "Aus_IP1.2",
+            "Aus_AS1",
+            "AT",
+            14515
+        )
+            .await
+    );
+
+    packvec.push(
+        make_package(
+            Utc::now(),
+            "Aus_IP1.3",
+            "Aus_AS1",
+            "AT",
+            44
+        )
+            .await
+    );
+
+    packvec.push(
+        make_package(
+            Utc::now(),
+            "Aus_IP2.1",
+            "Aus_AS2",
+            "AT",
+            22
+        )
+            .await
+    );
+    packvec.push(
+        make_package(
+            Utc::now()+chrono::Duration::days(1),
+            "Aus_IP2.2",
+            "Aus_AS2",
+            "AT",
+            40
+        )
+            .await
+    );
+
+    packvec.push(
+        make_package(
+            Utc::now()+ chrono::Duration::days(4),
+            "Aus_IP3.1",
+            "Aus_AS3",
+            "AT",
+            210
+        )
+            .await
+    );
+
+    packvec.push(
+        make_package(
+            Utc::now()+ chrono::Duration::days(2),
+            "Aus_IP3.2",
+            "Aus_AS4",
+            "AT",
+            339
+        )
+            .await
+    );
+    return Ok(packvec);
 }
 
 
 
+// I tested with this main function
+// #[tokio::main(flavor = "current_thread")]
+// // This attribute makes your main function asynchronous
 
+// async fn main()  ->  Result<(), Box<dyn std::error::Error>> { // Use Box<dyn Error> for a general error type
+//     let token = "duuW20S6Ki63k5EIEx6sahpMQ5QKDbo5eYNbN1Ux91Hx00oY9xAQDwIaU-JnoNg7wRYkww457heGfPgcX7Y-UA==";
 
+//     let client = Client::new("http://localhost:8086", "db")
+//         .with_token(token);
+
+//     let packvecThai = makeThaipackage().await?;
+//     let packvecAus = makeAustraliapackage().await?;
+//     write_datas(client.clone(), packvecThai.clone(), IPtype::Outgoing).await?;
+//     write_datas(client.clone(), packvecAus.clone(), IPtype::Outgoing).await?;
+//     write_datas(client.clone(), packvecThai, IPtype::Incoming).await?;
+//     write_datas(client.clone(), packvecAus, IPtype::Incoming).await?;
+
+//     //
+//     // let res = read_all_table_query(client.clone(), "incoming").await?;
+//     // let res2 = read_all_table_query(client.clone(), "outgoing").await?;
+//     // println!("{}", res);
+//     // println!("{}", res2);
+    
+//     let res = read_all_table_query(client.clone(), "incoming").await?;
+//     println!("{}", res);
+
+//     Ok(())
+
+   
+// }
 
