@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use influxdb::{ InfluxDbWriteable};
+use influxdb::{InfluxDbWriteable};
 use influxdb::{Client, Query};
 
 #[derive(Clone)]
