@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    
+    secureJsonData:
+      token: ball
+    jsonData:
+      httpMode: POST
+      organization: doglver
+      defaultBucket: db
+      version: Flux 
+    isDefault: true
+    uid: influxdb-ds
