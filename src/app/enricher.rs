@@ -40,7 +40,7 @@ async fn store_in_influxdb(client: &Client, data: &serde_json::Value) -> Result<
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Create the consumer
-    let consumer = create_consumer("kafka:9092");
+    let consumer = create_consumer("localhost:9092");
 
     // Subscribe to our topic
     consumer.subscribe(&["listener-to-enricher"]).unwrap();
