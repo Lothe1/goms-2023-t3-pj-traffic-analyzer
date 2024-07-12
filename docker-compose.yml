@@ -17,7 +17,6 @@ services:
     - GF_SECURITY_ADMIN_PASSWORD=admin
     - GF_SECURITY_ADMIN_USER=admin
 
-
   influxdb:
     image: influxdb:latest
     container_name: influxdb
@@ -35,8 +34,29 @@ services:
       - INFLUXDB_ADMIN_ENABLED=true
       - INFLUXDB_ADMIN_USER=admin
       - INFLUXDB_ADMIN_PASSWORD=password
+    
+  kafka:
+    image: apache/kafka:3.7.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    command: >
+      bash -c "
+      /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties &
+      sleep 10 && /opt/kafka/bin/kafka-topics.sh --create --topic listener-to-enricher --bootstrap-server localhost:9092 &&
+      /opt/kafka/bin/kafka-topics.sh --create --topic enricher-to-tsdb --bootstrap-server localhost:9092
+      "
+    networks:
+      - kafka_network
+
 networks:
   grafana_network:
+  kafka_network:
 volumes:
   grafana_data:
   influxdb_data:
