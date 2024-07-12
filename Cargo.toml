@@ -27,6 +27,3 @@ path = "src/app/listener.rs"
 name = "ta-enricher"
 path = "src/app/enricher.rs"
 
-[[bin]]
-name = "influxdb_"
-path = "src/app/influx_db.rs"
