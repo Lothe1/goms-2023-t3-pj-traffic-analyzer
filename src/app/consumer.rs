@@ -72,7 +72,7 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
             Ok(message) => {
 
                 let payload = message.payload().unwrap();
-                println!("{}", String::from_utf8(payload.to_vec()).unwrap());
+                // println!("{}", String::from_utf8(payload.to_vec()).unwrap());
                 let packet = NetflowParser::default().parse_bytes(&payload).first().unwrap();
                 println!("{}", json!(NetflowParser::default().parse_bytes(&payload)).to_string());
 

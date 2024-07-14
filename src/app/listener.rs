@@ -22,18 +22,19 @@ async fn main() -> std::io::Result<()> {
     let args = Args::parse();
     let port = args.port;
     {
-        let socket = UdpSocket::bind(format!("127.0.0.1:{port}"))?;
+        let socket = UdpSocket::bind(format!("0.0.0.0:{port}"))?;
     
         let producer = producer::create();
 
         loop {
         // Receives a single datagram message on the socket. If `buf` is too small to hold
         // the message, it will be cut off.
+            println!(":D");
             let mut buf = [0; BUF_SIZE];
             let (amt, src) = socket.recv_from(&mut buf)?;
 
             let mut buf: Vec<u8> = buf.to_vec().iter().filter(|&x| *x != 0).map(|x| x.clone()).collect();
-            println!("{:?}", String::from_utf8(buf.clone()));
+            // println!("{:?}", String::from_utf8(buf.clone()));
             // Redeclare `buf` as slice of the received data and send reverse data back to origin.
             let buf: &[u8] = &buf;
             // buf.reverse();

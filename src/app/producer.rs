@@ -18,6 +18,7 @@ pub fn create() -> FutureProducer{
         create().
         expect("Producer creation error");
 
+    println!("Producer created");
     producer
 }
 
