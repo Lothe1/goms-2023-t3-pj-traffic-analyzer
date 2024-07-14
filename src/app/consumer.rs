@@ -1,8 +1,26 @@
+#![allow(unused_imports)]
+
+use influxdb::Client;
 use rdkafka::consumer::{Consumer, StreamConsumer, CommitMode};
 use rdkafka::{ClientConfig, Message};
 
-use crate::influx_db::CustomMessage;
+use crate::app::influx_db::CustomMessage;
+use crate::app::influx_db::make_package;
+use crate::app::influx_db::IPtype;
+use crate::app::influx_db::write_data;
 
+
+
+
+
+use serde_json::json;
+use netflow_parser::{NetflowParser, NetflowPacketResult};
+use uuid::Uuid;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::fs::File;
+
+use chrono::{DateTime, TimeZone, Utc};
+use super::cidr_lookup::CidrLookup;
 
 pub async fn start_listener_to_enricher(){
     let consumer: StreamConsumer = create();
@@ -14,7 +32,7 @@ pub async fn start_enricher_to_tsdb(){
     consume_enricher_to_tsdb(consumer).await;
 }
 
-fn create() ->StreamConsumer {
+pub fn create() ->StreamConsumer {
     let mut config = ClientConfig::new();
 
     config.set("bootstrap.servers", "localhost:9092");
@@ -29,6 +47,17 @@ fn create() ->StreamConsumer {
 }
 
 async fn consume_listener_to_enricher(consumer:StreamConsumer){
+    let influx_client = Client::new("http://localhost:8086", "db")
+            .with_token("ball");
+
+    // Load the CIDR lookup tables
+    let country_cidr_path = "map/ip2country-v4.tsv";
+    let as_cidr_path = "map/ip2asn-v4.tsv";
+    let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);// Load the CIDR lookup tables
+    let country_cidr_path = "map/ip2country-v4.tsv";
+    let as_cidr_path = "map/ip2asn-v4.tsv";
+    let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);
+
     consumer.subscribe
         (
             &["listener-to-enricher"]
@@ -39,15 +68,58 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
         match consumer.recv().await{
             Err(e) => println!("Error receiving message: {:?}", e),
             Ok(message) => {
-                match message.payload_view::<str>(){
-                    None => println!("NO message"),
-                    Some(Ok(s)) => {
-                        println!("Message: {:?}", s);
-                    },
-                    Some(Err(e)) => {
-                        println!("Error unpacking message: {:?}", e);
+
+                let payload = message.payload().unwrap();
+                println!("{}", String::from_utf8(payload.to_vec()).unwrap());
+                let packet = NetflowParser::default().parse_bytes(&payload).first().unwrap();
+                println!("{}", json!(NetflowParser::default().parse_bytes(&payload)).to_string());
+
+                if let NetflowPacketResult::V5(packet) = NetflowParser::default().parse_bytes(&payload).first().unwrap() {
+                    for flow in &packet.flowsets {
+                        let src_ip = flow.src_addr.to_string();
+                        let dst_ip = flow.dst_addr.to_string();
+                        let src_country = cidr_lookup.lookup_country(&src_ip).unwrap();
+                        let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap();
+                        let src_as = cidr_lookup.lookup_as(&src_ip).unwrap();
+                        let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
+
+                        let time = Utc.timestamp(packet.header.unix_secs.into(), 0);
+                        
+                        let package_incoming = make_package(time, &src_ip, &src_as, &src_country, flow.d_octets as i32).await;
+                        let package_outgoing = make_package(time, &dst_ip, &dst_as, &dst_country, flow.d_octets as i32).await;
+
+                        write_data(influx_client.clone(), package_incoming, IPtype::Incoming).await;
+                        write_data(influx_client.clone(), package_outgoing, IPtype::Outgoing).await;
+        
+                        // let enriched_data = json!({
+                        //     "measurement": "netflow",
+                        //     "tags": {
+                        //         "src_ip": src_ip,
+                        //         "dst_ip": dst_ip,
+                        //         "src_country": src_country,
+                        //         "dst_country": dst_country,
+                        //         "src_as": src_as,
+                        //         "dst_as": dst_as
+                        //     },
+                        //     "fields": {
+                        //         "packets": flow.d_pkts, // Number of packets
+                        //         "bytes": flow.d_octets, // Number of bytes
+                        //         "first_switched": flow.first, // Start time of the flow
+                        //         "last_switched": flow.last, // End time of the flow
+                        //     },
+                        //     "time": packet.header.unix_secs // Time of the flow (we'll use the packet's timestamp)
+                        // });
+        
+                        // println!("{}", enriched_data.to_string());
+        
+                        // Store the enriched data in InfluxDB
+                        // if let Err(e) = store_in_influxdb(&client, &enriched_data).await {
+                        //     eprintln!("Failed to store data in InfluxDB: {}", e);
+                        // }
                     }
                 }
+
+
                 consumer.commit_message(&message, CommitMode::Async).unwrap();
 
 

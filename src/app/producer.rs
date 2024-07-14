@@ -5,8 +5,7 @@ use rdkafka::ClientConfig;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::util::Timeout;
 
-use crate::influx_db::CustomMessage;
-
+use crate::app::influx_db::CustomMessage;
 
 pub fn create() -> FutureProducer{
     let mut config = ClientConfig::new();
@@ -21,7 +20,7 @@ pub fn create() -> FutureProducer{
 
 
 // Do string  for topic listener-to-enricher
-pub async fn produce_listener_to_enricher(future_producer: &FutureProducer, message: &str) {
+pub async fn produce_listener_to_enricher(future_producer: &FutureProducer, message: &[u8]) {
     let record = FutureRecord::to("listener-to-enricher")
         .payload(message)
         .key("Test-key");
