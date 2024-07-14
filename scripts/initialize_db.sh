@@ -7,4 +7,5 @@ influx setup \
   --token ball \
   --org doglver \
   --bucket db \
+  --retention 24h\
   --force

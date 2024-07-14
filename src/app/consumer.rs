@@ -70,15 +70,14 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
         match consumer.recv().await{
             Err(e) => println!("Error receiving message: {:?}", e),
             Ok(message) => {
+                println!("Message received: {:?}", message.offset());
 
                 let payload = message.payload().unwrap();
-                println!("{}", String::from_utf8(payload.to_vec()).unwrap());
                 let packet = NetflowParser::default().parse_bytes(&payload).first().unwrap();
-                println!("{}", json!(NetflowParser::default().parse_bytes(&payload)).to_string());
-
+                println!("Begin if Let nettflowPacketReuslt");
                 if let NetflowPacketResult::V5(packet) = NetflowParser::default().parse_bytes(&payload).first().unwrap() {
+                    println!("Begin for flow in packet.flowsets");
                     for flow in &packet.flowsets {
-
 
                         let src_ip = flow.src_addr.to_string();
                         let dst_ip = flow.dst_addr.to_string();
@@ -86,8 +85,10 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
                         let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap();
                         let src_as = cidr_lookup.lookup_as(&src_ip).unwrap();
                         let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
-                        let time = Utc.timestamp(packet.header.unix_secs.into(), 0);
+
                         
+                        let time = Utc::now();
+
                         let package_incoming = make_package(time, &src_ip, &src_as, &src_country, flow.d_octets as i32).await;
                         let package_outgoing = make_package(time, &dst_ip, &dst_as, &dst_country, flow.d_octets as i32).await;
 
@@ -95,34 +96,10 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
 
                         let wrapped_msg: CustomMessage = super::producer::make_custom_package(package_incoming, IPtype::Incoming);
                         let wrapped_msg2 = super::producer::make_custom_package(package_outgoing, IPtype::Outgoing);
-                        super::producer::produce_enricher_to_tsb(&producer, wrapped_msg).await;
-                        super::producer::produce_enricher_to_tsb(&producer, wrapped_msg2).await;
+                        let _ = super::producer::produce_enricher_to_tsb(&producer, wrapped_msg).await;
+                        let _ = super::producer::produce_enricher_to_tsb(&producer, wrapped_msg2).await;
 
-    
-                        // let enriched_data = json!({
-                        //     "measurement": "netflow",
-                        //     "tags": {
-                        //         "src_ip": src_ip,
-                        //         "dst_ip": dst_ip,
-                        //         "src_country": src_country,
-                        //         "dst_country": dst_country,
-                        //         "src_as": src_as,
-                        //         "dst_as": dst_as
-                        //     },
-                        //     "fields": {
-                        //         "packets": flow.d_pkts, // Number of packets
-                        //         "bytes": flow.d_octets, // Number of bytes
-                        //         "first_switched": flow.first, // Start time of the flow
-                        //         "last_switched": flow.last, // End time of the flow
-                        //     },
-                        //     "time": packet.header.unix_secs // Time of the flow (we'll use the packet's timestamp)
-                        // });
-                        // println!("{}", enriched_data.to_string());
-        
-                        // Store the enriched data in InfluxDB
-                        // if let Err(e) = store_in_influxdb(&client, &enriched_data).await {
-                        //     eprintln!("Failed to store data in InfluxDB: {}", e);
-                        // }
+
                     }
                 }
 
@@ -136,7 +113,9 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
 }
 
 async fn consume_enricher_to_tsdb(consumer:StreamConsumer){
-    let client = create_client("db", "ball");
+    let client = Client::new("http://localhost:8086", "db")
+        .with_token("ball");
+
     consumer.subscribe
     (
         &["enricher-to-tsdb"]
@@ -154,8 +133,12 @@ async fn consume_enricher_to_tsdb(consumer:StreamConsumer){
                         println!("Message: {:?} recieved", recieved_message);
 
 
-                        let _ = write_data(client.clone(), recieved_message.package, recieved_message.iptype).await;
+                        let write_res = write_data(client.clone(), recieved_message.package, recieved_message.iptype).await;
 
+                        match write_res{
+                            Ok(_) => println!("Data written to db"),
+                            Err(e) => println!("Error writing to db: {:?}", e)
+                        }
                         
                     },
                     Some(Err(e)) => {

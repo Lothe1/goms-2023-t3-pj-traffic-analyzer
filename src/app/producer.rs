@@ -44,10 +44,10 @@ pub async fn produce_listener_to_enricher(future_producer: &FutureProducer, mess
 
     match status_delivery{
         Ok(report) => {
-            println!("Sent message: {:?} from listener-> enricher", report);
+            println!("Sent message: {:?} from listener-> enricher PRODUCER", report);
         },
         Err(e) => {
-            println!("Error producing: {:?}  from listener-> enricher", e);
+            println!("Error producing: {:?}  from listener-> enricher PRODUCER", e);
         }
     }
 }
@@ -68,10 +68,10 @@ pub async fn produce_enricher_to_tsb(future_producer: &FutureProducer, message:C
 
     match status_delivery{
         Ok(report) => {
-            println!("Sent message: {:?}  from enricher -> tsdb ", report);
+            println!("Sent message: {:?}  from enricher -> tsdb PRODUCER ", report);
         },
         Err(e) => {
-            println!("Error producing: {:?}   from enricher -> tsdb", e);
+            println!("Error producing: {:?}  from enricher -> tsdb PRODUCER", e);
         }
     }
 }
