@@ -1,21 +1,36 @@
 use chrono::{DateTime, Utc};
 use influxdb::{InfluxDbWriteable};
 use influxdb::{Client, Query};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[derive(InfluxDbWriteable)]
-struct Package{
-    time: DateTime<Utc>,
-    IP: String,
-    AS: String,
-    location: String,
-    bytes_count: i32,
+#[derive(Serialize, Deserialize)]
+pub struct Package{
+    pub(crate) time: DateTime<Utc>,
+    pub(crate) IP: String,
+    pub(crate) AS: String,
+    pub(crate) location: String,
+    pub(crate) bytes_count: i32,
 }
 
-enum IPtype {
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
+pub enum IPtype {
     Incoming,
     Outgoing,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CustomMessage{
+    pub(crate) package: Package,
+    pub(crate) iptype: IPtype,
+}
+
+
+
+
+
 
 fn create_client(bucket:&str, token: &str) -> Client {
     let client = Client::new("http://localhost:8086", bucket)

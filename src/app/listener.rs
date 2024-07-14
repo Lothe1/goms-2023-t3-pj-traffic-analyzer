@@ -9,6 +9,8 @@ use rdkafka::util::Timeout;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 pub mod influx_db;
+pub mod consumer;
+pub mod producer;
 
 const BUF_SIZE: usize = 2048;
 
