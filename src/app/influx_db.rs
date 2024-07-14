@@ -29,7 +29,7 @@ pub struct CustomMessage{
 
 
 
-fn create_client(bucket:&str, token: &str) -> Client {
+pub fn create_client(bucket:&str, token: &str) -> Client {
     let client = Client::new("http://localhost:8086", bucket)
         .with_token(token);
     client

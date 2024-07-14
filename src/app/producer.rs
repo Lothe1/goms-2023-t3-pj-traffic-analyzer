@@ -7,6 +7,9 @@ use rdkafka::util::Timeout;
 
 use crate::app::influx_db::CustomMessage;
 
+use super::influx_db::Package;
+use super::influx_db::IPtype;
+
 pub fn create() -> FutureProducer{
     let mut config = ClientConfig::new();
     config.set("bootstrap.servers", "localhost:9092");
@@ -19,7 +22,17 @@ pub fn create() -> FutureProducer{
 }
 
 
-// Do string  for topic listener-to-enricher
+// send the network struct for topic enricher-to-tsdb
+pub fn make_custom_package(package:Package, iptype: IPtype) -> CustomMessage{
+    CustomMessage{
+        package: package,
+        iptype: iptype
+    }
+}
+
+
+
+// Do string for topic listener-to-enricher
 pub async fn produce_listener_to_enricher(future_producer: &FutureProducer, message: &[u8]) {
     let record = FutureRecord::to("listener-to-enricher")
         .payload(message)
@@ -31,13 +44,14 @@ pub async fn produce_listener_to_enricher(future_producer: &FutureProducer, mess
 
     match status_delivery{
         Ok(report) => {
-            println!("Sent message: {:?}", report);
+            println!("Sent message: {:?} from listener-> enricher", report);
         },
         Err(e) => {
-            println!("Error producing: {:?}", e);
+            println!("Error producing: {:?}  from listener-> enricher", e);
         }
     }
 }
+
 
 
 // send the network structfor topic enricher-to-tsdb
@@ -54,10 +68,10 @@ pub async fn produce_enricher_to_tsb(future_producer: &FutureProducer, message:C
 
     match status_delivery{
         Ok(report) => {
-            println!("Sent message: {:?}", report);
+            println!("Sent message: {:?}  from enricher -> tsdb ", report);
         },
         Err(e) => {
-            println!("Error producing: {:?}", e);
+            println!("Error producing: {:?}   from enricher -> tsdb", e);
         }
     }
 }

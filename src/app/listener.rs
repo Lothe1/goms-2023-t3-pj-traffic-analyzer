@@ -1,4 +1,6 @@
 #![allow(unused_imports)]
+mod enricher_to_db;
+
 use clap::Parser;
 
 use netflow_parser::{NetflowParser, NetflowPacketResult};
