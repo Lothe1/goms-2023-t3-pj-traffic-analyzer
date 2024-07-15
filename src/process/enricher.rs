@@ -14,17 +14,18 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec
         for flow in &packet.flowsets {
             let src_ip = flow.src_addr.to_string();
             let dst_ip = flow.dst_addr.to_string();
-            let src_country = cidr_lookup.lookup_country(&src_ip).unwrap();
-            let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap();
-            let src_as = cidr_lookup.lookup_as(&src_ip).unwrap();
-            let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
-            // println!("src private? [{}] -- dst private? [{}]", is_private_ip(&src_ip), is_private_ip(&dst_ip));
+            let src_country = cidr_lookup.lookup_country(&src_ip).unwrap_or(&"Unknown".to_string()).clone();
+            let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap_or(&"Unknown".to_string()).clone();
+            let (src_asn, src_as_name) = cidr_lookup.lookup_as(&src_ip).unwrap_or(&(String::from("Unknown"), String::from("Unknown"))).clone();
+            let (dst_asn, dst_as_name) = cidr_lookup.lookup_as(&dst_ip).unwrap_or(&(String::from("Unknown"), String::from("Unknown"))).clone();
+            
             let packet_type = match (is_private_ip(&src_ip), is_private_ip(&dst_ip)) {
                 (true, true) => Some(IPtype::Incoming),
                 (true, _) => Some(IPtype::Outgoing),
                 (_, true) => Some(IPtype::Incoming),
                 (_, _) => Some(IPtype::Outgoing)
             };
+
             println!("{:?}", packet_type);
             if packet_type.is_some() {
                 let time = Utc::now();
@@ -35,9 +36,11 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec
                         "dst_ip": dst_ip,
                         "src_country": src_country,
                         "dst_country": dst_country,
-                        "src_as": src_as,
-                        "dst_as": dst_as,
-                        "type": format!("{:?}", packet_type.unwrap()).clone()
+                        "src_asn": src_asn,
+                        "src_as_name": src_as_name,
+                        "dst_asn": dst_asn,
+                        "dst_as_name": dst_as_name,
+                        "type": format!("{:?}", packet_type.unwrap())
                     },
                     "fields": {
                         "packets": flow.d_pkts,
@@ -45,7 +48,7 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec
                         "first_switched": flow.first,
                         "last_switched": flow.last
                     },
-                    "time": Utc::now()
+                    "time": time
                 });
 
                 let buf = serde_json::to_vec(&enriched_data).unwrap();

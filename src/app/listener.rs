@@ -12,7 +12,6 @@ use rdkafka::util::Timeout;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 
-
 const BUF_SIZE: usize = 2048;
 
 
@@ -26,8 +25,8 @@ async fn main() -> std::io::Result<()> {
         let producer = producer::create();
 
         loop {
-        // Receives a single datagram message on the socket. If `buf` is too small to hold
-        // the message, it will be cut off.
+            // Receives a single datagram message on the socket. If `buf` is too small to hold
+            // the message, it will be cut off.
             println!(":D");
             let mut buf = [0; BUF_SIZE];
             let (amt, src) = socket.recv_from(&mut buf)?;

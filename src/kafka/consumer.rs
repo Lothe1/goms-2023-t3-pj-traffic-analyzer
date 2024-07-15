@@ -50,15 +50,14 @@ pub fn create() ->StreamConsumer {
 
 
 async fn consume_listener_to_enricher(consumer:StreamConsumer){
-    //make kafka producer for enricher to tsdb
+    // Make kafka producer for enricher to tsdb
     
     let producer = super::producer::create();
 
     // Load the CIDR lookup tables
     let country_cidr_path = "map/ip2country-v4.tsv";
     let as_cidr_path = "map/ip2asn-v4.tsv";
-    let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);// Load the CIDR lookup tables
-    
+    let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);
 
     consumer.subscribe(&["listener-to-enricher"]).expect("Can't subscribe to specified topic");
 
@@ -72,12 +71,12 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
                 tokio::spawn(async move {
                     let my_msg = msg.clone();
                     let payload: Vec<u8> = my_msg.payload().unwrap().iter().cloned().collect();
-                    let packets = enrich_packet(payload.clone(), cidr_clone).await; // Use listener_ip here
+                    let packets = enrich_packet(payload.clone(), cidr_clone).await;
                     for packet in packets {
                         this_producer.send(FutureRecord::<(), _>::to("enricher-to-tsdb")
-                        .payload(&packet), Timeout::Never)
-                          .await
-                          .expect("Failed to produce");
+                            .payload(&packet), Timeout::Never)
+                            .await
+                            .expect("Failed to produce");
                     }
                     println!("Sent all data!");
                 });
