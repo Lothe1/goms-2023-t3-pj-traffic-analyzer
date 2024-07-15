@@ -20,10 +20,10 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec
             let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
             // println!("src private? [{}] -- dst private? [{}]", is_private_ip(&src_ip), is_private_ip(&dst_ip));
             let packet_type = match (is_private_ip(&src_ip), is_private_ip(&dst_ip)) {
-                (true, true) => None,
+                (true, true) => Some(IPtype::Incoming),
                 (true, _) => Some(IPtype::Outgoing),
                 (_, true) => Some(IPtype::Incoming),
-                (_, _) => None
+                (_, _) => Some(IPtype::Outgoing)
             };
             println!("{:?}", packet_type);
             if packet_type.is_some() {
