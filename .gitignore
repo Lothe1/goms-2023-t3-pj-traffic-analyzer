@@ -29,3 +29,5 @@ data/engine/data/90a89ffb32cb0582/autogen/1/index/7/MANIFEST
 data/engine/wal/90a89ffb32cb0582/autogen/1/_00002.wal
 data/influxd.bolt
 data/influxd.sqlite
+data/*
+testcases/*
