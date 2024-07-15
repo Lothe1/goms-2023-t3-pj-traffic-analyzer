@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 5,
+  "id": 1,
   "links": [],
   "panels": [
     {
@@ -29,7 +29,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -37,16 +37,27 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -76,77 +87,37 @@
         "x": 0,
         "y": 0
       },
-      "id": 3,
+      "id": 8,
       "options": {
-        "barRadius": 0.3,
-        "barWidth": 0.8,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
         },
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
-        },
-        "xField": "incoming · location",
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
-      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "  from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"incoming\")\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes_count\" or r[\"_field\"] == \"location\")",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_dst_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n",
           "refId": "A"
         }
       ],
-      "title": "Incoming Bytes (By country)",
+      "title": "Outgoing Traffic by AS Name",
       "transformations": [
         {
           "id": "concatenate",
           "options": {}
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "incoming · bytes_count": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "incoming · location": {
-                "aggregations": [],
-                "operation": "groupby"
-              }
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "incoming · bytes_count (sum)"
-              }
-            ]
-          }
         }
       ],
-      "type": "barchart"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -156,7 +127,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -164,16 +135,27 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -203,81 +185,37 @@
         "x": 12,
         "y": 0
       },
-      "id": 4,
+      "id": 9,
       "options": {
-        "barRadius": 0.3,
-        "barWidth": 0.8,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
         },
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
-        },
-        "xField": "incoming · location",
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
-      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "  from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"incoming\")\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes_count\" or r[\"_field\"] == \"AS\")",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Incoming\")\n  |> filter(fn: (r) => r[\"tags_src_country\"] != \"None\" and r[\"tags_src_country\"] != \"\")\n  |> group(columns: [\"tags_src_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n",
           "refId": "A"
         }
       ],
-      "title": "Incoming Bytes (By AS)",
+      "title": "Incoming Traffic by Country",
       "transformations": [
         {
           "id": "concatenate",
           "options": {}
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "incoming · AS": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "incoming · bytes_count": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "incoming · location": {
-                "aggregations": [],
-                "operation": "groupby"
-              }
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "incoming · bytes_count (sum)"
-              }
-            ]
-          }
         }
       ],
-      "type": "barchart"
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -287,7 +225,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -295,22 +233,37 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
             }
           },
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -334,97 +287,48 @@
         "x": 0,
         "y": 8
       },
-      "id": 5,
+      "id": 7,
       "options": {
-        "barRadius": 0.3,
-        "barWidth": 0.8,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": false
         },
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
-        },
-        "xField": "incoming · location",
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
-      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "  from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"outgoing\")\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes_count\" or r[\"_field\"] == \"location\")",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_country\"] != \"None\" and r[\"tags_dst_country\"] != \"\")\n  |> group(columns: [\"tags_dst_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n",
           "refId": "A"
         }
       ],
-      "title": "Outgoing Bytes (By country)",
+      "title": "Outgoing Traffic by Country",
       "transformations": [
         {
           "id": "concatenate",
           "options": {}
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "incoming · bytes_count": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "incoming · location": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "outgoing · bytes_count": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "outgoing · location": {
-                "aggregations": [],
-                "operation": "groupby"
-              }
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "outgoing · bytes_count (sum)"
-              }
-            ]
-          }
         }
       ],
-      "type": "barchart"
+      "type": "timeseries"
     },
     {
       "datasource": {
         "type": "influxdb",
         "uid": "influxdb-ds"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "axisBorderShow": false,
@@ -432,16 +336,27 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -471,99 +386,40 @@
         "x": 12,
         "y": 8
       },
-      "id": 6,
+      "id": 10,
       "options": {
-        "barRadius": 0.3,
-        "barWidth": 0.8,
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false
         },
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
-        },
-        "xField": "incoming · location",
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
-      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "  from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"outgoing\")\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes_count\" or r[\"_field\"] == \"AS\")",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Incoming\")\n  |> filter(fn: (r) => r[\"tags_src_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_src_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n",
           "refId": "A"
         }
       ],
-      "title": "Outgoing Bytes (By AS)",
+      "title": "Incoming Traffic by AS",
       "transformations": [
         {
           "id": "concatenate",
-          "options": {
-            "frameNameLabel": "frame",
-            "frameNameMode": "field"
-          }
-        },
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "incoming · AS": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "incoming · bytes_count": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              },
-              "incoming · location": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "outgoing · AS": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "outgoing · Time": {
-                "aggregations": []
-              },
-              "outgoing · bytes_count": {
-                "aggregations": [
-                  "sum"
-                ],
-                "operation": "aggregate"
-              }
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "outgoing · bytes_count (sum)"
-              }
-            ]
-          }
+          "options": {}
         }
       ],
-      "type": "barchart"
+      "type": "timeseries"
     }
   ],
+  "refresh": "5s",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -571,26 +427,26 @@
       {
         "current": {
           "selected": false,
-          "text": "1m",
-          "value": "1m"
+          "text": "12h",
+          "value": "12h"
         },
         "hide": 0,
         "name": "user_time",
         "options": [
           {
             "selected": true,
-            "text": "1m",
-            "value": "1m"
+            "text": "12h",
+            "value": "12h"
           }
         ],
-        "query": "1m",
+        "query": "12h",
         "skipUrlSync": false,
         "type": "textbox"
       }
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -601,6 +457,6 @@
   "timezone": "browser",
   "title": "DogLover's Network analysis",
   "uid": "adrjehkduzda8c",
-  "version": 2,
+  "version": 7,
   "weekStart": ""
 }
