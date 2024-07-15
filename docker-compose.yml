@@ -52,8 +52,18 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
     depends_on:
       - zookeeper
-    
-
+  
+  influx_db_start_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - influxdb
+    entrypoint: ["/bin/bash", "/scripts/initialize_db.sh"]
+    volumes:
+      - ./scripts/initialize_db.sh:/scripts/initialize_db.sh
+    networks:
+      - grafana_network
 
 
 networks:
