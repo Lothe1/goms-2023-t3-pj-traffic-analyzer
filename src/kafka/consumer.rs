@@ -19,6 +19,7 @@ use tokio::fs::File;
 use chrono::{DateTime, TimeZone, Utc};
 use crate::db::cidr_lookup::CidrLookup;
 
+
 pub async fn start_listener_to_enricher(){
     let consumer: StreamConsumer = create();
     consume_listener_to_enricher(consumer).await;
@@ -42,8 +43,6 @@ pub fn create() ->StreamConsumer {
 
     consumer
 }
-
-
 
 
 async fn consume_listener_to_enricher(consumer:StreamConsumer){

@@ -32,7 +32,6 @@ pub fn make_custom_package(package:Package, iptype: IPtype) -> CustomMessage{
 }
 
 
-
 // Do string for topic listener-to-enricher
 pub async fn produce_listener_to_enricher(future_producer: &FutureProducer, message: &[u8]) {
     let record = FutureRecord::to("listener-to-enricher")
