@@ -5,10 +5,10 @@ use rdkafka::ClientConfig;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::util::Timeout;
 
-use crate::app::influx_db::CustomMessage;
+use crate::db::influx_db::CustomMessage;
 
-use super::influx_db::Package;
-use super::influx_db::IPtype;
+use crate::db::influx_db::Package;
+use crate::db::ip_lookup::IPtype;
 
 pub fn create() -> FutureProducer{
     let mut config = ClientConfig::new();
@@ -18,6 +18,7 @@ pub fn create() -> FutureProducer{
         create().
         expect("Producer creation error");
 
+    println!("Producer created");
     producer
 }
 

@@ -9,7 +9,7 @@ use cidr::Ipv4Cidr;
 
 use clap::builder::Str;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CidrLookup {
     // country code to country name
     country_map: HashMap<String, String>,

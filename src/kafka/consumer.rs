@@ -2,29 +2,29 @@
 
 use influxdb::Client;
 use rdkafka::consumer::{Consumer, StreamConsumer, CommitMode};
+use rdkafka::producer::FutureRecord;
+use rdkafka::util::Timeout;
 use rdkafka::{ClientConfig, Message};
 
-use crate::app::influx_db::CustomMessage;
-use crate::app::influx_db::make_package;
-use crate::app::influx_db::IPtype;
-use crate::app::influx_db::write_data;
-use crate::app::influx_db::create_client;
-
-
-
-
+use crate::db::influx_db::{CustomMessage, make_package, write_data, create_client};
+use crate::db::ip_lookup::IPtype;
+use crate::process::enricher::enrich_packet;
+// use crate::app::enricher::enrich_packet;
 use serde_json::json;
 use netflow_parser::{NetflowParser, NetflowPacketResult};
 use uuid::Uuid;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::fs::File;
+use tokio::net::lookup_host;
+use std::net::IpAddr;
 
 use chrono::{DateTime, TimeZone, Utc};
-use super::cidr_lookup::CidrLookup;
+use crate::db::cidr_lookup::CidrLookup;
 
 pub async fn start_listener_to_enricher(){
     let consumer: StreamConsumer = create();
-    consume_listener_to_enricher(consumer).await;
+    // let listener_ip = get_listener_ip().await.unwrap(); // Retrieve listener IP here
+    consume_listener_to_enricher(consumer).await; // Pass listener_ip to function
 }
 
 pub async fn start_enricher_to_tsdb(){
@@ -60,53 +60,28 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
     let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);// Load the CIDR lookup tables
     
 
-    consumer.subscribe
-        (
-            &["listener-to-enricher"]
-        )
-        .expect("Can't subscribe to specified topic");
+    consumer.subscribe(&["listener-to-enricher"]).expect("Can't subscribe to specified topic");
 
-    loop{
-        match consumer.recv().await{
+    loop {
+        match consumer.recv().await {
             Err(e) => println!("Error receiving message: {:?}", e),
             Ok(message) => {
-                println!("Message received: {:?}", message.offset());
-
-                let payload = message.payload().unwrap();
-                let packet = NetflowParser::default().parse_bytes(&payload).first().unwrap();
-                println!("Begin if Let nettflowPacketReuslt");
-                if let NetflowPacketResult::V5(packet) = NetflowParser::default().parse_bytes(&payload).first().unwrap() {
-                    println!("Begin for flow in packet.flowsets");
-                    for flow in &packet.flowsets {
-
-                        let src_ip = flow.src_addr.to_string();
-                        let dst_ip = flow.dst_addr.to_string();
-                        let src_country = cidr_lookup.lookup_country(&src_ip).unwrap();
-                        let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap();
-                        let src_as = cidr_lookup.lookup_as(&src_ip).unwrap();
-                        let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
-
-                        
-                        let time = Utc::now();
-
-                        let package_incoming = make_package(time, &src_ip, &src_as, &src_country, flow.d_octets as i32).await;
-                        let package_outgoing = make_package(time, &dst_ip, &dst_as, &dst_country, flow.d_octets as i32).await;
-
-
-
-                        let wrapped_msg: CustomMessage = super::producer::make_custom_package(package_incoming, IPtype::Incoming);
-                        let wrapped_msg2 = super::producer::make_custom_package(package_outgoing, IPtype::Outgoing);
-                        let _ = super::producer::produce_enricher_to_tsb(&producer, wrapped_msg).await;
-                        let _ = super::producer::produce_enricher_to_tsb(&producer, wrapped_msg2).await;
-
-
+                let msg = message.detach();
+                let cidr_clone = cidr_lookup.clone();
+                let this_producer = producer.clone();
+                tokio::spawn(async move {
+                    let my_msg = msg.clone();
+                    let payload: Vec<u8> = my_msg.payload().unwrap().iter().cloned().collect();
+                    let packets = enrich_packet(payload.clone(), cidr_clone).await; // Use listener_ip here
+                    for packet in packets {
+                        this_producer.send(FutureRecord::<(), _>::to("enricher-to-tsdb")
+                        .payload(&packet), Timeout::Never)
+                          .await
+                          .expect("Failed to produce");
                     }
-                }
-
-
+                    println!("Sent all data!");
+                });
                 consumer.commit_message(&message, CommitMode::Async).unwrap();
-
-
             }
         }
     }
@@ -152,4 +127,7 @@ async fn consume_enricher_to_tsdb(consumer:StreamConsumer){
 }
 
 
-
+async fn get_listener_ip() -> Option<IpAddr> {
+    let hostnames = lookup_host("localhost").await.ok()?;
+    hostnames.map(|x| x.ip()).next()
+}

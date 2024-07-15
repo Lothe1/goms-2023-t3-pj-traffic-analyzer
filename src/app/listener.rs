@@ -1,10 +1,9 @@
 #![allow(unused_imports)]
-mod enricher_to_db;
 
 use clap::Parser;
 
 use netflow_parser::{NetflowParser, NetflowPacketResult};
-use ta::app::producer;
+use ta::kafka::producer;
 use ta::cmd::listener::Args;
 use std::net::UdpSocket;
 use rdkafka::producer::{FutureProducer, FutureRecord};
@@ -29,6 +28,7 @@ async fn main() -> std::io::Result<()> {
         loop {
         // Receives a single datagram message on the socket. If `buf` is too small to hold
         // the message, it will be cut off.
+            println!(":D");
             let mut buf = [0; BUF_SIZE];
             let (amt, src) = socket.recv_from(&mut buf)?;
 

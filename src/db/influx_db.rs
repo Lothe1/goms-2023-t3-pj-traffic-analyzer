@@ -3,6 +3,8 @@ use influxdb::{InfluxDbWriteable};
 use influxdb::{Client, Query};
 use serde::{Deserialize, Serialize};
 
+use super::ip_lookup::IPtype;
+
 #[derive(Clone, Debug)]
 #[derive(InfluxDbWriteable)]
 #[derive(Serialize, Deserialize)]
@@ -14,12 +16,7 @@ pub struct Package{
     pub(crate) bytes_count: i32,
 }
 
-#[derive(Serialize, Deserialize)]
-#[derive(Debug)]
-pub enum IPtype {
-    Incoming,
-    Outgoing,
-}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CustomMessage{
