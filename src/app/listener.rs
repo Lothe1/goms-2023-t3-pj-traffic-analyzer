@@ -15,7 +15,7 @@ use ta::db::ip_lookup::IPtype;
 use serde_json::{json, Value};
 use chrono::Utc;
 use tokio::net::lookup_host;
-use get_if_addrs::get_if_addrs;
+
 
 const BUF_SIZE: usize = 2048;
 
@@ -34,36 +34,33 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    let socket = std::net::UdpSocket::bind(format!("0.0.0.0:{}", port))?;
-    let producer = producer::create();
+    {
+        let socket = UdpSocket::bind(format!("0.0.0.0:{port}"))?;
+        let producer = producer::create();
 
-    loop {
-        let mut buf = [0; BUF_SIZE];
-        let (amt, src) = socket.recv_from(&mut buf)?;
-        let buf: &[u8] = &buf;
-        classify_and_produce(&producer, buf, &listener_ip).await;
+        loop {
+            let mut buf = [0; BUF_SIZE];
+            let (amt, src) = socket.recv_from(&mut buf)?;
+            let buf: &[u8] = &buf;
+            classify_and_produce(&producer, buf, &listener_ip).await;
+            // producer::produce_listener_to_enricher(&producer, buf).await;
+        }
     }
-
     Ok(())
 }
 
-async fn get_listener_ip() -> Option<IpAddr> {
-    // Retrieve all network interfaces
-    if let Ok(if_addrs) = get_if_addrs() {
-        // Filter for IPv4 addresses within the 192.168.x.x range
-        for iface in if_addrs {
-            if let addr = iface.ip() {
-                if let IpAddr::V4(ipv4_addr) = addr {
-                    let octets = ipv4_addr.octets();
-                    if octets[0] == 192 && octets[1] == 168 {
-                        return Some(IpAddr::V4(ipv4_addr));
-                    }
-                }
-            }
-        }
-    }
+// async fn get_listener_ip() -> Option<IpAddr> {
+//     match lookup_host("localhost").await {
+//         Ok(hostnames) => hostnames.map(|x| x.ip()).next(),
+//         Err(err) => {
+//             eprintln!("Error: Failed to lookup localhost hostname: {:?}", err);
+//             None
+//         }
+//     }
+// }
 
-    None
+async fn get_listener_ip() -> Option<IpAddr> {
+    Some(IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)))
 }
 
 async fn classify_and_produce(producer: &FutureProducer, buf: &[u8], listener_ip: &IpAddr) {
