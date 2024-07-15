@@ -23,7 +23,7 @@ use crate::db::cidr_lookup::CidrLookup;
 
 pub async fn start_listener_to_enricher(){
     let consumer: StreamConsumer = create();
-    let listener_ip = get_listener_ip().await.unwrap(); // Retrieve listener IP here
+    // let listener_ip = get_listener_ip().await.unwrap(); // Retrieve listener IP here
     consume_listener_to_enricher(consumer).await; // Pass listener_ip to function
 }
 
@@ -72,7 +72,7 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
                 tokio::spawn(async move {
                     let my_msg = msg.clone();
                     let payload: Vec<u8> = my_msg.payload().unwrap().iter().cloned().collect();
-                    let packets = enrich_packet(payload.clone(), cidr_clone, listener_ip).await; // Use listener_ip here
+                    let packets = enrich_packet(payload.clone(), cidr_clone).await; // Use listener_ip here
                     for packet in packets {
                         this_producer.send(FutureRecord::<(), _>::to("enricher-to-tsdb")
                         .payload(&packet), Timeout::Never)

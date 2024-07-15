@@ -7,9 +7,10 @@ use crate::db::ip_lookup::{is_private_ip, IPtype};
 use std::net::IpAddr;
 
 
-pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup, listener_ip: IpAddr) -> Vec<Vec<u8>> {
+pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec<u8>> {
     let mut enriched_packets: Vec<Vec<u8>> = Vec::new();
     if let Some(NetflowPacketResult::V5(packet)) = NetflowParser::default().parse_bytes(&payload).first() {
+        println!("Parsing {} flows", packet.flowsets.len());
         for flow in &packet.flowsets {
             let src_ip = flow.src_addr.to_string();
             let dst_ip = flow.dst_addr.to_string();
@@ -19,34 +20,39 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup, listener_i
             let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
             // println!("src private? [{}] -- dst private? [{}]", is_private_ip(&src_ip), is_private_ip(&dst_ip));
             let packet_type = match (is_private_ip(&src_ip), is_private_ip(&dst_ip)) {
-                (true, true) => IPtype::Outgoing,
-                (true, _) => IPtype::Outgoing,
-                (_, true) => IPtype::Incoming,
-                (_, _) => IPtype::Outgoing
+                (true, true) => None,
+                (true, _) => Some(IPtype::Outgoing),
+                (_, true) => Some(IPtype::Incoming),
+                (_, _) => None
             };
-            let time = Utc::now();
-            let enriched_data = json!({
-                "measurement": "netflow",
-                "tags": {
-                    "src_ip": src_ip,
-                    "dst_ip": dst_ip,
-                    "src_country": src_country,
-                    "dst_country": dst_country,
-                    "src_as": src_as,
-                    "dst_as": dst_as,
-                    "type": format!("{:?}", packet_type)
-                },
-                "fields": {
-                    "packets": flow.d_pkts,
-                    "bytes": flow.d_octets,
-                    "first_switched": flow.first,
-                    "last_switched": flow.last
-                },
-                "time": Utc::now()
-            });
+            println!("{:?}", packet_type);
+            if packet_type.is_some() {
+                let time = Utc::now();
+                let enriched_data = json!({
+                    "measurement": "netflow",
+                    "tags": {
+                        "src_ip": src_ip,
+                        "dst_ip": dst_ip,
+                        "src_country": src_country,
+                        "dst_country": dst_country,
+                        "src_as": src_as,
+                        "dst_as": dst_as,
+                        "type": format!("{:?}", packet_type.unwrap()).clone()
+                    },
+                    "fields": {
+                        "packets": flow.d_pkts,
+                        "bytes": flow.d_octets,
+                        "first_switched": flow.first,
+                        "last_switched": flow.last
+                    },
+                    "time": Utc::now()
+                });
 
-            let buf = serde_json::to_vec(&enriched_data).unwrap();
-            enriched_packets.push(buf);
+                let buf = serde_json::to_vec(&enriched_data).unwrap();
+                enriched_packets.push(buf);
+            } else {
+                continue;
+            }
         }
     }
     enriched_packets
