@@ -21,11 +21,10 @@ use std::net::IpAddr;
 use chrono::{DateTime, TimeZone, Utc};
 use crate::db::cidr_lookup::CidrLookup;
 
-
 pub async fn start_listener_to_enricher(){
     let consumer: StreamConsumer = create();
     let listener_ip = get_listener_ip().await.unwrap(); // Retrieve listener IP here
-    consume_listener_to_enricher(consumer, listener_ip).await; // Pass listener_ip to function
+    consume_listener_to_enricher(consumer).await; // Pass listener_ip to function
 }
 
 pub async fn start_enricher_to_tsdb(){
@@ -48,8 +47,11 @@ pub fn create() ->StreamConsumer {
 }
 
 
-async fn consume_listener_to_enricher(consumer:StreamConsumer, listener_ip: IpAddr){ // Receive listener_ip as parameter
-    // Make kafka producer for enricher to tsdb
+
+
+async fn consume_listener_to_enricher(consumer:StreamConsumer){
+    //make kafka producer for enricher to tsdb
+    
     let producer = super::producer::create();
 
     // Load the CIDR lookup tables

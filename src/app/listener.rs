@@ -10,8 +10,7 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::ClientConfig;
 use rdkafka::util::Timeout;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use std::net::{IpAddr};
-use tokio::net::lookup_host;
+
 
 
 const BUF_SIZE: usize = 2048;
@@ -21,24 +20,25 @@ const BUF_SIZE: usize = 2048;
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
     let port = args.port;
-    let listener_ip = get_listener_ip().await.unwrap();
-
     {
         let socket = UdpSocket::bind(format!("0.0.0.0:{port}"))?;
+    
         let producer = producer::create();
 
         loop {
+        // Receives a single datagram message on the socket. If `buf` is too small to hold
+        // the message, it will be cut off.
+            println!(":D");
             let mut buf = [0; BUF_SIZE];
             let (amt, src) = socket.recv_from(&mut buf)?;
-            let buf: &[u8] = &buf;
-            // classify_and_produce(&producer, buf, &listener_ip).await;
-            producer::produce_listener_to_enricher(&producer, buf).await;
-        }
-    }
-    Ok(())
-}
 
-async fn get_listener_ip() -> Option<IpAddr> {
-    let hostnames = lookup_host("localhost").await.ok()?;
-    hostnames.map(|x| x.ip()).next()
+            
+            let buf: &[u8] = &buf;
+            // buf.reverse();
+            
+            producer::produce_listener_to_enricher(&producer, buf).await;
+
+        }
+    } // the socket is closed here
+    Ok(())
 }

@@ -17,15 +17,14 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup, listener_i
             let dst_country = cidr_lookup.lookup_country(&dst_ip).unwrap();
             let src_as = cidr_lookup.lookup_as(&src_ip).unwrap();
             let dst_as = cidr_lookup.lookup_as(&dst_ip).unwrap();
-
-            let packet_type = if &flow.src_addr == &listener_ip {
-                IPtype::Outgoing
-            } else if &flow.dst_addr == &listener_ip {
-                IPtype::Incoming
-            } else {
-                continue; // Skip packets that are neither incoming nor outgoing
+            // println!("src private? [{}] -- dst private? [{}]", is_private_ip(&src_ip), is_private_ip(&dst_ip));
+            let packet_type = match (is_private_ip(&src_ip), is_private_ip(&dst_ip)) {
+                (true, true) => IPtype::Outgoing,
+                (true, _) => IPtype::Outgoing,
+                (_, true) => IPtype::Incoming,
+                (_, _) => IPtype::Outgoing
             };
-
+            let time = Utc::now();
             let enriched_data = json!({
                 "measurement": "netflow",
                 "tags": {
