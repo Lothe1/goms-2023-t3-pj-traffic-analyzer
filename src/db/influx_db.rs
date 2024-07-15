@@ -1,23 +1,32 @@
 use chrono::{DateTime, Utc};
 use influxdb::{InfluxDbWriteable};
 use influxdb::{Client, Query};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+use super::ip_lookup::IPtype;
+
+#[derive(Clone, Debug)]
 #[derive(InfluxDbWriteable)]
-struct Package{
-    time: DateTime<Utc>,
-    IP: String,
-    AS: String,
-    location: String,
-    bytes_count: i32,
+#[derive(Serialize, Deserialize)]
+pub struct Package{
+    pub(crate) time: DateTime<Utc>,
+    pub(crate) IP: String,
+    pub(crate) AS: String,
+    pub(crate) location: String,
+    pub(crate) bytes_count: i32,
 }
 
-enum IPtype {
-    Incoming,
-    Outgoing,
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CustomMessage{
+    pub(crate) package: Package,
+    pub(crate) iptype: IPtype,
 }
 
-fn create_client(bucket:&str, token: &str) -> Client {
+
+
+pub fn create_client(bucket:&str, token: &str) -> Client {
     let client = Client::new("http://localhost:8086", bucket)
         .with_token(token);
     client
@@ -29,7 +38,7 @@ async fn read_all_table_query(client: Client, table: &str) -> Result<String, inf
     let read_result = client.query(query).await?;
     return Ok(read_result.to_string());
 }
-async fn write_data(client: Client, pack: Package, iptype: IPtype) -> Result<(), influxdb::Error> {
+pub async fn write_data(client: Client, pack: Package, iptype: IPtype) -> Result<(), influxdb::Error> {
     let mut write_query;
     match iptype {
         IPtype::Incoming => {
@@ -42,7 +51,7 @@ async fn write_data(client: Client, pack: Package, iptype: IPtype) -> Result<(),
     client.query(write_query).await?;
     Ok(())
 }
-async fn make_package(time: DateTime<Utc>, IP: &str, AS: &str, Country: &str, bytes: i32) -> Package {
+pub async fn make_package(time: DateTime<Utc>, IP: &str, AS: &str, Country: &str, bytes: i32) -> Package {
     let pack = Package {
         time: time,
         IP: IP.to_string(),

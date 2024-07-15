@@ -48,12 +48,22 @@ services:
       KAFKA_ADVERTISED_HOST_NAME: localhost
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_CREATE_TOPICS: "listener-to-enricher:1:1,enricher-to-tsdb:1:1"
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
     depends_on:
       - zookeeper
-    
-
+  
+  influx_db_start_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - influxdb
+    entrypoint: ["/bin/bash", "/scripts/initialize_db.sh"]
+    volumes:
+      - ./scripts/initialize_db.sh:/scripts/initialize_db.sh
+    networks:
+      - grafana_network
 
 
 networks:
