@@ -1,10 +1,9 @@
 #![allow(unused_imports)]
-mod enricher_to_db;
 
 use clap::Parser;
 
 use netflow_parser::{NetflowParser, NetflowPacketResult};
-use ta::app::producer;
+use ta::kafka::producer;
 use ta::cmd::listener::Args;
 use std::net::UdpSocket;
 use rdkafka::producer::{FutureProducer, FutureRecord};
