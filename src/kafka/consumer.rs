@@ -15,6 +15,8 @@ use netflow_parser::{NetflowParser, NetflowPacketResult};
 use uuid::Uuid;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::fs::File;
+use tokio::net::lookup_host;
+use std::net::IpAddr;
 
 use chrono::{DateTime, TimeZone, Utc};
 use crate::db::cidr_lookup::CidrLookup;
@@ -22,7 +24,8 @@ use crate::db::cidr_lookup::CidrLookup;
 
 pub async fn start_listener_to_enricher(){
     let consumer: StreamConsumer = create();
-    consume_listener_to_enricher(consumer).await;
+    let listener_ip = get_listener_ip().await.unwrap(); // Retrieve listener IP here
+    consume_listener_to_enricher(consumer, listener_ip).await; // Pass listener_ip to function
 }
 
 pub async fn start_enricher_to_tsdb(){
@@ -45,9 +48,8 @@ pub fn create() ->StreamConsumer {
 }
 
 
-async fn consume_listener_to_enricher(consumer:StreamConsumer){
-    //make kafka producer for enricher to tsdb
-    
+async fn consume_listener_to_enricher(consumer:StreamConsumer, listener_ip: IpAddr){ // Receive listener_ip as parameter
+    // Make kafka producer for enricher to tsdb
     let producer = super::producer::create();
 
     // Load the CIDR lookup tables
@@ -56,26 +58,19 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
     let cidr_lookup = CidrLookup::new(&country_cidr_path, &as_cidr_path);// Load the CIDR lookup tables
     
 
-    consumer.subscribe
-        (
-            &["listener-to-enricher"]
-        )
-        .expect("Can't subscribe to specified topic");
+    consumer.subscribe(&["listener-to-enricher"]).expect("Can't subscribe to specified topic");
 
-    loop{
-        match consumer.recv().await{
+    loop {
+        match consumer.recv().await {
             Err(e) => println!("Error receiving message: {:?}", e),
             Ok(message) => {
-                // println!("Message received: {:?}", message.offset());
-
                 let msg = message.detach();
                 let cidr_clone = cidr_lookup.clone();
                 let this_producer = producer.clone();
-                tokio::spawn( async move {
-                    // println!("Spawned");
+                tokio::spawn(async move {
                     let my_msg = msg.clone();
                     let payload: Vec<u8> = my_msg.payload().unwrap().iter().cloned().collect();
-                    let packets = enrich_packet(payload.clone(), cidr_clone).await;
+                    let packets = enrich_packet(payload.clone(), cidr_clone, listener_ip).await; // Use listener_ip here
                     for packet in packets {
                         this_producer.send(FutureRecord::<(), _>::to("enricher-to-tsdb")
                         .payload(&packet), Timeout::Never)
@@ -83,8 +78,7 @@ async fn consume_listener_to_enricher(consumer:StreamConsumer){
                           .expect("Failed to produce");
                     }
                     println!("Sent all data!");
-                }
-                );
+                });
                 consumer.commit_message(&message, CommitMode::Async).unwrap();
             }
         }
@@ -131,4 +125,7 @@ async fn consume_enricher_to_tsdb(consumer:StreamConsumer){
 }
 
 
-
+async fn get_listener_ip() -> Option<IpAddr> {
+    let hostnames = lookup_host("localhost").await.ok()?;
+    hostnames.map(|x| x.ip()).next()
+}
