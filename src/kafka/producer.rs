@@ -7,7 +7,8 @@ use rdkafka::util::Timeout;
 
 use crate::db::influx_db::CustomMessage;
 
-use crate::db::influx_db::{Package, IPtype};
+use crate::db::influx_db::Package;
+use crate::db::ip_lookup::IPtype;
 
 pub fn create() -> FutureProducer{
     let mut config = ClientConfig::new();
