@@ -24,15 +24,7 @@ const BUF_SIZE: usize = 2048;
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
     let port = args.port;
-
-    // Attempt to get the listener IP
-    let listener_ip = match get_listener_ip().await {
-        Some(ip) => ip,
-        None => {
-            eprintln!("Error: Failed to retrieve listener IP.");
-            return Ok(());
-        }
-    };
+    let listener_ip = get_listener_ip().await.unwrap();
 
     {
         let socket = UdpSocket::bind(format!("0.0.0.0:{port}"))?;
@@ -49,18 +41,9 @@ async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-// async fn get_listener_ip() -> Option<IpAddr> {
-//     match lookup_host("localhost").await {
-//         Ok(hostnames) => hostnames.map(|x| x.ip()).next(),
-//         Err(err) => {
-//             eprintln!("Error: Failed to lookup localhost hostname: {:?}", err);
-//             None
-//         }
-//     }
-// }
-
 async fn get_listener_ip() -> Option<IpAddr> {
-    Some(IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)))
+    let hostnames = lookup_host("localhost").await.ok()?;
+    hostnames.map(|x| x.ip()).next()
 }
 
 async fn classify_and_produce(producer: &FutureProducer, buf: &[u8], listener_ip: &IpAddr) {
