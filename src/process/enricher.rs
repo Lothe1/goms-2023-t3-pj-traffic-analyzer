@@ -10,27 +10,25 @@ use std::net::IpAddr;
 pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec<u8>> {
     let mut enriched_packets: Vec<Vec<u8>> = Vec::new();
 
-    let parser = NetflowParser::default();
+    let mut parser = NetflowParser::default();
     for packet_result in parser.parse_bytes(&payload) {
         match packet_result {
             NetflowPacketResult::V5(packet) => {
                 println!("Parsing NetFlow v5 with {} flows", packet.flowsets.len());
                 for flow in &packet.flowsets {
-                    enrich_flow(flow, &cidr_lookup, &mut enriched_packets);
+                    enrich_flow_v5(flow, &cidr_lookup, &mut enriched_packets);
                 }
             },
             NetflowPacketResult::V9(packet) => {
-                println!("Parsing NetFlow v9 with {} flows", packet.data_sets.len());
-                for data_set in &packet.data_sets {
-                    for flow in &data_set.data_flows {
-                        enrich_flow(flow, &cidr_lookup, &mut enriched_packets);
-                    }
+                println!("Parsing NetFlow v9 with {} flows", packet.flowsets.len());
+                for flow in &packet.flowsets {
+                    enrich_flow_v9(flow, &cidr_lookup, &mut enriched_packets);
                 }
             },
             NetflowPacketResult::IPFix(packet) => {
-                println!("Parsing NetFlow v10 with {} flows", packet.data_flows.len());
-                for flow in &packet.data_flows {
-                    enrich_flow(flow, &cidr_lookup, &mut enriched_packets);
+                println!("Parsing IPFIX with {} flows", packet.flowsets.len());
+                for flow in &packet.flowsets {
+                    enrich_flow_ipfix(flow, &cidr_lookup, &mut enriched_packets);
                 }
             },
             _ => {
@@ -43,8 +41,7 @@ pub async fn enrich_packet(payload: Vec<u8>, cidr_lookup: CidrLookup) -> Vec<Vec
     enriched_packets
 }
 
-
-fn enrich_flow(flow: &FlowSet, cidr_lookup: &CidrLookup, enriched_packets: &mut Vec<Vec<u8>>) {
+fn enrich_flow_v5(flow: &netflow_parser::static_versions::v5::FlowSet, cidr_lookup: &CidrLookup, enriched_packets: &mut Vec<Vec<u8>>) {
     let src_ip = flow.src_addr.to_string();
     let dst_ip = flow.dst_addr.to_string();
     let src_country = cidr_lookup.lookup_country(&src_ip).unwrap_or(&"Unknown".to_string()).clone();
@@ -86,6 +83,17 @@ fn enrich_flow(flow: &FlowSet, cidr_lookup: &CidrLookup, enriched_packets: &mut 
         let buf = serde_json::to_vec(&enriched_data).unwrap();
         enriched_packets.push(buf);
     }
+}
+
+fn enrich_flow_v9(flow: &netflow_parser::variable_versions::v9::FlowSet, cidr_lookup: &CidrLookup, enriched_packets: &mut Vec<Vec<u8>>) {
+    
+    
+}
+
+
+
+fn enrich_flow_ipfix(flow: &netflow_parser::variable_versions::ipfix::FlowSet, cidr_lookup: &CidrLookup, enriched_packets: &mut Vec<Vec<u8>>) {
+
 }
 
 
