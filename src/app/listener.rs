@@ -27,7 +27,7 @@ async fn main() -> std::io::Result<()> {
         loop {
             // Receives a single datagram message on the socket. If `buf` is too small to hold
             // the message, it will be cut off.
-            println!(":D");
+            // println!(":D");
             let mut buf = [0; BUF_SIZE];
 
 
