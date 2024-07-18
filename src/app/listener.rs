@@ -29,6 +29,8 @@ async fn main() -> std::io::Result<()> {
             // the message, it will be cut off.
             println!(":D");
             let mut buf = [0; BUF_SIZE];
+
+
             let (amt, src) = socket.recv_from(&mut buf)?;
 
             
