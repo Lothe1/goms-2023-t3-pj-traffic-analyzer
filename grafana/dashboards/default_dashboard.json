@@ -18,7 +18,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
   "links": [],
   "panels": [
     {
@@ -111,12 +110,6 @@
         }
       ],
       "title": "Outgoing Traffic by AS Name",
-      "transformations": [
-        {
-          "id": "concatenate",
-          "options": {}
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -209,12 +202,6 @@
         }
       ],
       "title": "Incoming Traffic by Country",
-      "transformations": [
-        {
-          "id": "concatenate",
-          "options": {}
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -311,12 +298,6 @@
         }
       ],
       "title": "Outgoing Traffic by Country",
-      "transformations": [
-        {
-          "id": "concatenate",
-          "options": {}
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -410,13 +391,447 @@
         }
       ],
       "title": "Incoming Traffic by AS",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-ds"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 12,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-ds"
+          },
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_src_country\"] != \"Not routed\")\n  |> group(columns: [\"tags_src_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Incoming Traffic by Country",
       "transformations": [
         {
           "id": "concatenate",
           "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "_start": true,
+              "_stop": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
         }
       ],
-      "type": "timeseries"
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-ds"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 11,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-ds"
+          },
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Incoming\")\n  |> filter(fn: (r) => r[\"tags_src_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_src_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Incoming Traffic by AS",
+      "transformations": [
+        {
+          "id": "concatenate",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "_start": true,
+              "_stop": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-ds"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 14,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-ds"
+          },
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_country\"] != \"Not routed\")\n  |> group(columns: [\"tags_dst_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Outgoing Traffic by Country",
+      "transformations": [
+        {
+          "id": "concatenate",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "_start": true,
+              "_stop": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-ds"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 13,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-ds"
+          },
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_dst_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 Outgoing Traffic by AS",
+      "transformations": [
+        {
+          "id": "concatenate",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "_start": true,
+              "_stop": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "barchart"
     }
   ],
   "refresh": "5s",
@@ -457,6 +872,6 @@
   "timezone": "browser",
   "title": "DogLover's Network analysis",
   "uid": "adrjehkduzda8c",
-  "version": 7,
+  "version": 1,
   "weekStart": ""
 }

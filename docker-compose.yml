@@ -34,6 +34,7 @@ services:
       - INFLUXDB_ADMIN_ENABLED=true
       - INFLUXDB_ADMIN_USER=admin
       - INFLUXDB_ADMIN_PASSWORD=password
+
   zookeeper:
     image: wurstmeister/zookeeper
     container_name: zookeeper
