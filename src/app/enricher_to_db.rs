@@ -3,6 +3,10 @@ use ta::kafka;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    kafka::consumer::start_enricher_to_tsdb().await;
+    for _ in 0..10{
+        tokio::spawn(async move {
+            kafka::consumer::start_listener_to_enricher().await;
+        });
+    }
     Ok(())
 }

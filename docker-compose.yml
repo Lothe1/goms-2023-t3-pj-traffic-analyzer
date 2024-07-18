@@ -47,7 +47,7 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: localhost
       KAFKA_ADVERTISED_PORT: 9092
-      KAFKA_CREATE_TOPICS: "listener-to-enricher:1:1,enricher-to-tsdb:1:1"
+      KAFKA_CREATE_TOPICS: "listener-to-enricher:20:1,enricher-to-tsdb:1:1"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
     depends_on:
