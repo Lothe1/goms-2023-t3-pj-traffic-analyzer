@@ -26,8 +26,3 @@ path = "src/app/listener.rs"
 [[bin]]
 name = "ta-enricher"
 path = "src/app/enricher.rs"
-
-[[bin]]
-name = "enricher2db"
-path = "src/app/enricher_to_db.rs"
-
