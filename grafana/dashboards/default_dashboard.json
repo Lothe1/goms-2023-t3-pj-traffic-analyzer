@@ -478,7 +478,7 @@
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_src_country\"] != \"Not routed\")\n  |> group(columns: [\"tags_src_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_src_country\"] != \"Not routed\")\n  |> filter(fn: (r) => r[\"tags_src_country\"] != \"None\" and r[\"tags_src_country\"] != \"\")\n\n  |> group(columns: [\"tags_src_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
           "refId": "A"
         }
       ],
@@ -588,7 +588,7 @@
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Incoming\")\n  |> filter(fn: (r) => r[\"tags_src_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_src_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Incoming\")\n  |> filter(fn: (r) => r[\"tags_src_as_name\"] != \"Not routed\")\n  \n  |> group(columns: [\"tags_src_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
           "refId": "A"
         }
       ],
@@ -698,7 +698,7 @@
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_country\"] != \"Not routed\")\n  |> group(columns: [\"tags_dst_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_country\"] != \"Not routed\")\n  |> filter(fn: (r) => r[\"tags_dst_country\"] != \"None\" and r[\"tags_dst_country\"] != \"\")\n\n  |> group(columns: [\"tags_dst_country\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
           "refId": "A"
         }
       ],
@@ -808,7 +808,7 @@
             "type": "influxdb",
             "uid": "influxdb-ds"
           },
-          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_dst_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
+          "query": "from(bucket: \"db\")\n  |> range(start: -${user_time})\n  |> filter(fn: (r) => r[\"_measurement\"] == \"kafka_consumer\")\n  |> filter(fn: (r) => r[\"tags_type\"] == \"Outgoing\")\n  |> filter(fn: (r) => r[\"tags_dst_as_name\"] != \"Not routed\")\n  |> group(columns: [\"tags_dst_as_name\"])\n  |> filter(fn: (r) => r[\"_field\"] == \"fields_bytes\")\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)",
           "refId": "A"
         }
       ],
@@ -861,7 +861,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
